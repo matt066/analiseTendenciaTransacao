@@ -50,7 +50,7 @@ public class TrainModel {
         model.init();
 
         // Geração de dados fictícios para treinamento
-        List<DataSet> allData = generateDummyData(100000, numInputs, numOutputs);
+        List<DataSet> allData = generateDummyData(500000, numInputs, numOutputs);
         DataSet fullDataSet = DataSet.merge(allData);
 
         // Divisão dos dados em conjuntos de treino e teste
@@ -67,6 +67,14 @@ public class TrainModel {
         INDArray output = model.output(testData.getFeatures());  // Execução do modelo no conjunto de teste.
         eval.eval(testData.getLabels(), output);  // Avaliação do modelo baseado nas saídas previstas e reais.
         System.out.println(eval.stats());
+
+        // Aqui, estamos adicionando o log das probabilidades de fraude para cada transação
+        for (int i = 0; i < testData.numExamples(); i++) {
+            // Pegando a probabilidade de fraude (assumindo que a fraude é a classe 1)
+            double fraudProbability = output.getDouble(i, 1); // 1 é a posição da classe de fraude
+            // Exibindo a probabilidade de fraude junto com o código do estabelecimento
+            System.out.println(String.format("Transaction %d: Fraud Probability: %.4f", i, fraudProbability));
+        }
 
         // Salvamento do modelo treinado
         File modelFile = new File("model.zip");  // Localização do arquivo onde o modelo será salvo.
