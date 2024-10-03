@@ -1,23 +1,24 @@
 package com.m.analiseTendenciaTransacao;
 
-import lombok.Data;
-
 import java.time.LocalDate;
 
-@Data
 public class Transaction {
     private int establishmentCode;
     private double amount;
     private LocalDate transactionDate;
+    private double mediaAmount;  // Atributo para média do valor das transações
+    private double taxaFraude;   // Atributo para taxa de fraude
 
-    public Transaction() {}
-
-    public Transaction(int establishmentCode, double amount, LocalDate transactionDate) {
+    // Construtor
+    public Transaction(int establishmentCode, double amount, LocalDate transactionDate, double mediaAmount, double taxaFraude) {
         this.establishmentCode = establishmentCode;
         this.amount = amount;
         this.transactionDate = transactionDate;
+        this.mediaAmount = mediaAmount;
+        this.taxaFraude = taxaFraude;
     }
 
+    // Getters e Setters
     public int getEstablishmentCode() {
         return establishmentCode;
     }
@@ -40,5 +41,31 @@ public class Transaction {
 
     public void setTransactionDate(LocalDate transactionDate) {
         this.transactionDate = transactionDate;
+    }
+
+    public double getMediaAmount() {
+        return mediaAmount;
+    }
+
+    public void setMediaAmount(double mediaAmount) {
+        this.mediaAmount = mediaAmount;
+    }
+
+    public double getTaxaFraude() {
+        return taxaFraude;
+    }
+
+    public void setTaxaFraude(double taxaFraude) {
+        this.taxaFraude = taxaFraude;
+    }
+
+    // Método para obter o valor médio de transações para o estabelecimento
+    public double getAverageTransactionValue() {
+        return this.mediaAmount;
+    }
+
+    // Método para definir o valor médio de transações para o estabelecimento
+    public void setAverageTransactionValue(double averageValue) {
+        this.mediaAmount = averageValue;
     }
 }

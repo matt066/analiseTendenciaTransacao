@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @RestController
 @Slf4j
@@ -29,55 +27,60 @@ public class TransactionController {
         }
 
         // Preprocessa e cria a entrada para a rede neural
-        INDArray features = Nd4j.create(transactions.size(), 3);
+        INDArray features = Nd4j.create(transactions.size(), 4); // 4 colunas agora
         for (int i = 0; i < transactions.size(); i++) {
             Transaction t = transactions.get(i);
 
             // Normalização dos dados da transação
-            double establishmentCodeScaled = t.getEstablishmentCode() / 10000.0;
-            double amountScaled = t.getAmount() / 1000000.0;
-            double dayOfMonth = t.getTransactionDate().getDayOfMonth() / 31.0;
+            double establishmentCodeScaled = t.getEstablishmentCode() / 10000.0; // Normalização arbitrária do establishmentCode
+            double amountScaled = t.getAmount() / 1000000.0;  // Normalização do valor da transação
+            double dayOfMonth = t.getTransactionDate().getDayOfMonth() / 31.0;  // Normalização do dia do mês
+            double avgTransactionValueScaled = t.getAverageTransactionValue() / 1000000.0;  // Normalização do valor médio de transações
 
+            // Popula o array de entrada para o modelo
             features.putScalar(new int[]{i, 0}, establishmentCodeScaled);
             features.putScalar(new int[]{i, 1}, amountScaled);
             features.putScalar(new int[]{i, 2}, dayOfMonth);
+            features.putScalar(new int[]{i, 3}, avgTransactionValueScaled);  // O novo input
+
         }
 
-        // Realiza a inferência usando a rede neural
+        // Realiza a inferência usando o modelo
         INDArray output = model.output(features);
-        double fraudThreshold = 0.7;
+        double fraudThreshold = 0.8;
 
-        // Map para agrupar as transações por establishmentCode
+        // Agrupando resultados por establishmentCode
         Map<Integer, List<Map<String, Object>>> groupedResults = new HashMap<>();
-
-        // Gera os resultados e agrupa por establishmentCode
         for (int i = 0; i < transactions.size(); i++) {
             Transaction t = transactions.get(i);
             int establishmentCode = t.getEstablishmentCode();
-            boolean isFraud = output.getDouble(i, 1) > fraudThreshold;
+            double fraudScore = output.getDouble(i, 1);  // Pega o score de fraude
 
             // Adiciona as informações da transação
             Map<String, Object> transactionInfo = new HashMap<>();
             transactionInfo.put("amount", t.getAmount());
             transactionInfo.put("transactionDate", t.getTransactionDate().toString());
-            transactionInfo.put("isFraud", isFraud ? "Yes" : "No");
+            transactionInfo.put("averageTransactionValue", t.getAverageTransactionValue()); // Adiciona o ticket médio
+            transactionInfo.put("fraudScore", fraudScore);
 
-            // Agrupa as transações pelo establishmentCode
+            // Agrupa as transações por establishmentCode
             groupedResults.computeIfAbsent(establishmentCode, k -> new ArrayList<>()).add(transactionInfo);
         }
 
-        // Constrói o formato final da resposta
+        // Constrói a resposta final
         StringBuilder formattedResponse = new StringBuilder();
         groupedResults.forEach((establishmentCode, transactionsList) -> {
             formattedResponse.append("EstablishmentCode ").append(establishmentCode).append(": {\n");
             for (Map<String, Object> transaction : transactionsList) {
                 formattedResponse.append("  amount: ").append(transaction.get("amount"))
                         .append(", transactionDate: \"").append(transaction.get("transactionDate")).append("\"")
-                        .append(", isFraud: \"").append(transaction.get("isFraud")).append("\"\n");
+                        .append(", averageTransactionValue: ").append(transaction.get("averageTransactionValue"))
+                        .append(", fraudScore: \"").append(transaction.get("fraudScore")).append("\"\n");
             }
             formattedResponse.append("}\n");
         });
 
         return ResponseEntity.ok(formattedResponse.toString());
     }
+
 }
