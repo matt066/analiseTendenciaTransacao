@@ -68,6 +68,13 @@ public class TrainModel {
         eval.eval(testData.getLabels(), output);
         System.out.println(eval.stats());
 
+         for (int i = 0; i < testData.numExamples(); i++) {
+            // Pegando a probabilidade de fraude (assumindo que a fraude é a classe 1)
+            double fraudProbability = output.getDouble(i, 1); // 1 é a posição da classe de fraude
+            // Exibindo a probabilidade de fraude junto com o código do estabelecimento
+            System.out.println(String.format("Transaction %d: Fraud Probability: %.4f", i, fraudProbability));
+        }
+
         // Salvando o modelo treinado
         File modelFile = new File("model.zip");
         try {
